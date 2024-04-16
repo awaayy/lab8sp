@@ -76,6 +76,7 @@ int main() {
         tourList.addTour({ "Париж", 5, 1000.0, 20 });
         tourList.addTour({ "Лондон", 7, 1500.0, 15 });
         tourList.addTour({ "Рим", 3, 800.0, 25 });
+        tourList.addTour({ "Варшава", 2, 700.0, 7 });
 
         //удаление тура
         tourList.removeTour(1);
