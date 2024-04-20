@@ -1,7 +1,7 @@
 #include <iostream>
-#include <vector>
 #include <stdexcept>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -13,55 +13,114 @@ struct Tour {
     int groupSize;
 };
 
+// Узел списка туров
+struct TourNode {
+    Tour* data;
+    TourNode* next;
+
+    // Конструктор
+    TourNode(Tour* _data, TourNode* _next) : data(_data), next(_next) {}
+
+    // Деструктор для освобождения памяти
+    ~TourNode() {
+        delete data;
+    }
+};
+
 // Класс, реализующий список туров
 class TourList {
 private:
-    vector<Tour> tours;
+    TourNode* head; // Указатель на начало списка туров
 
 public:
-    //Добавление тура в список
+    // Конструктор по умолчанию
+    TourList() : head(nullptr) {}
+
+    // Деструктор для освобождения памяти
+    ~TourList() {
+        while (head != nullptr) {
+            TourNode* temp = head;
+            head = head->next;
+            delete temp;
+        }
+    }
+
+    // Добавление тура в список
     void addTour(const Tour& tour) {
-        tours.push_back(tour);
-        //Сортировка списка по цене после добавления нового элемента
-        sort(tours.begin(), tours.end(), [](const Tour& a, const Tour& b) {
-            return a.price < b.price;
-            });
-    }
-
-    //Удаление тура по номеру позиции
-    void removeTour(int position) {
-        if (position < 0 || position >= tours.size()) {
-            throw out_of_range("Позиция вне диапазона");
+        Tour* newTour = new Tour(tour);
+        TourNode* newNode = new TourNode(newTour, nullptr);
+        if (head == nullptr) {
+            head = newNode;
         }
-        tours.erase(tours.begin() + position);
-    }
-
-    //Получение значения тура по номеру позиции
-    Tour getTour(int position) {
-        if (position < 0 || position >= tours.size()) {
-            throw out_of_range("Позиция вне диапазона");
-        }
-        return tours[position];
-    }
-
-    //Проверка наличия тура с указанным направлением поездки
-    vector<int> findToursByDestination(const string& destination) {
-        vector<int> positions;
-        for (size_t i = 0; i < tours.size(); ++i) {
-            if (tours[i].destination == destination) {
-                positions.push_back(i);
+        else {
+            TourNode* current = head;
+            while (current->next != nullptr) {
+                current = current->next;
             }
+            current->next = newNode;
         }
-        return positions;
     }
 
-    //Получение массива описаний туров, цена которых не превышает указанную
+    // Удаление тура по номеру позиции
+    void removeTour(int position) {
+        if (position < 0 || head == nullptr) {
+            throw out_of_range("Позиция вне диапазона");
+        }
+        if (position == 0) {
+            TourNode* temp = head;
+            head = head->next;
+            delete temp;
+        }
+        else {
+            TourNode* current = head;
+            for (int i = 0; i < position - 1; ++i) {
+                if (current->next == nullptr) {
+                    throw out_of_range("Позиция вне диапазона");
+                }
+                current = current->next;
+            }
+            TourNode* temp = current->next;
+            current->next = current->next->next;
+            delete temp;
+        }
+    }
+
+    // Получение значения тура по номеру позиции
+    Tour getTour(int position) {
+        if (position < 0 || head == nullptr) {
+            throw out_of_range("Позиция вне диапазона");
+        }
+        TourNode* current = head;
+        for (int i = 0; i < position; ++i) {
+            if (current->next == nullptr) {
+                throw out_of_range("Позиция вне диапазона");
+            }
+            current = current->next;
+        }
+        return *(current->data);
+    }
+
+    // Проверка наличия тура с указанным направлением поездки
+    bool findTourByDestination(const string& destination) {
+        TourNode* current = head;
+        while (current != nullptr) {
+            if (current->data->destination == destination) {
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
+    }
+
+    // Получение массива описаний туров, цена которых не превышает указанную
     vector<string> getToursDescriptionsByMaxPrice(double maxPrice) {
         vector<string> descriptions;
-        for (const auto& tour : tours) {
-            if (tour.price <= maxPrice) {
-                descriptions.push_back(tour.destination);
+        TourNode* current = head;
+        while (current != nullptr) {
+            if (current->data->price <= maxPrice) {
+                descriptions.push_back(current->data->destination);
             }
+            current = current->next;
         }
         return descriptions;
     }
@@ -72,39 +131,90 @@ int main() {
     try {
         TourList tourList;
 
-        //добавление туров
-        tourList.addTour({ "Париж", 5, 1000.0, 20 });
-        tourList.addTour({ "Лондон", 7, 1500.0, 15 });
-        tourList.addTour({ "Рим", 3, 800.0, 25 });
-        tourList.addTour({ "Варшава", 2, 700.0, 7 });
+        char choice;
+        do {
+            Tour tour;
+            cout << "Введите данные о туре:" << endl;
+            cout << "Направление: ";
+            cin >> tour.destination;
+            cout << "Продолжительность (в днях): ";
+            cin >> tour.duration;
+            cout << "Цена: ";
+            cin >> tour.price;
+            cout << "Размер группы: ";
+            cin >> tour.groupSize;
 
-        //удаление тура
-        tourList.removeTour(1);
+            tourList.addTour(tour);
 
-        //Пример получения тура по номеру позиции
-        Tour tour = tourList.getTour(0);
-        cout << "Направление тура: " << tour.destination << endl;
+            cout << "Хотите добавить ещё тур? (y/n): ";
+            cin >> choice;
+        } while (choice == 'y' || choice == 'Y');
 
-        //Пример поиска тура по направлению
-        vector<int> positions = tourList.findToursByDestination("Париж");
-        cout << "Туры с направлением в Париж найдены на позициях: ";
-        for (int pos : positions) {
-            cout << pos << " ";
+        // Вывод добавленных туров
+        cout << "Добавленные туры:" << endl;
+        for (int i = 0; ; ++i) {
+            try {
+                Tour tour = tourList.getTour(i);
+                cout << "Направление: " << tour.destination << ", Продолжительность: " << tour.duration
+                    << " дней, Цена: " << tour.price << ", Размер группы: " << tour.groupSize << endl;
+            }
+            catch (const out_of_range&) {
+                break;
+            }
         }
-        cout << endl;
 
-        //Пример получения туров по максимальной цене
-        vector<string> descriptions = tourList.getToursDescriptionsByMaxPrice(1000.0);
-        cout << "Туры с ценой <= 1000.0:" << endl;
-        for (const auto& desc : descriptions) {
-            cout << desc << ", ";
+        // Удаление тура по номеру позиции
+        int removePosition;
+        cout << "Введите номер позиции тура для удаления: ";
+        cin >> removePosition;
+        try {
+            tourList.removeTour(removePosition);
+            cout << "Тур успешно удален." << endl;
         }
-        cout << endl;
+        catch (const out_of_range& e) {
+            cerr << "Ошибка удаления тура: " << e.what() << endl;
+        }
+
+        // Получение значения тура по номеру позиции
+        int getPosition;
+        cout << "Введите номер позиции тура для получения данных: ";
+        cin >> getPosition;
+        try {
+            Tour tour = tourList.getTour(getPosition);
+            cout << "Данные тура на позиции " << getPosition << ":" << endl;
+            cout << "Направление: " << tour.destination << ", Продолжительность: " << tour.duration
+                << " дней, Цена: " << tour.price << ", Размер группы: " << tour.groupSize << endl;
+        }
+        catch (const out_of_range& e) {
+            cerr << "Ошибка получения данных о туре: " << e.what() << endl;
+        }
+
+        // Проверка наличия тура с указанным направлением поездки
+        string destinationCheck;
+        cout << "Введите направление для проверки наличия тура: ";
+        cin >> destinationCheck;
+        if (tourList.findTourByDestination(destinationCheck)) {
+            cout << "Тур с указанным направлением найден." << endl;
+        }
+        else {
+            cout << "Тур с указанным направлением не найден." << endl;
+        }
+
+        // Получение массива описаний туров, цена которых не превышает указанную
+        double maxPrice;
+        cout << "Введите максимальную цену для фильтрации туров: ";
+        cin >> maxPrice;
+        vector<string> filteredTours = tourList.getToursDescriptionsByMaxPrice(maxPrice);
+        cout << "Туры с ценой до " << maxPrice << " рублей:" << endl;
+        for (const auto& description : filteredTours) {
+            cout << description << endl;
+        }
 
     }
     catch (const exception& e) {
         cerr << "Произошло исключение: " << e.what() << endl;
     }
 
+    system("Pause");
     return 0;
 }
