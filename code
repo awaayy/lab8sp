@@ -1,8 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <vector>
-#include <algorithm>
 
 using namespace std;
 
@@ -39,11 +37,7 @@ public:
 
     // Деструктор для освобождения памяти
     ~TourList() {
-        while (head != nullptr) {
-            TourNode* temp = head;
-            head = head->next;
-            delete temp;
-        }
+        clear();
     }
 
     // Добавление тура в список
@@ -113,19 +107,6 @@ public:
         return false;
     }
 
-    // Получение массива описаний туров, цена которых не превышает указанную
-    vector<string> getToursDescriptionsByMaxPrice(double maxPrice) {
-        vector<string> descriptions;
-        TourNode* current = head;
-        while (current != nullptr) {
-            if (current->data->price <= maxPrice) {
-                descriptions.push_back(current->data->destination);
-            }
-            current = current->next;
-        }
-        return descriptions;
-    }
-
     // Запись данных в файл
     void writeToFile(const string& filename) {
         ofstream outFile(filename);
@@ -157,8 +138,8 @@ public:
         double price;
         int groupSize;
         while (inFile >> destination >> duration >> price >> groupSize) {
-            Tour tour = { destination, duration, price, groupSize };
-            addTour(tour);
+            Tour* tour = new Tour{ destination, duration, price, groupSize };
+            addTour(*tour);
         }
 
         inFile.close();
@@ -171,6 +152,33 @@ public:
             head = head->next;
             delete temp;
         }
+    }
+
+    // Получение массива описаний туров, цена которых не превышает указанную
+    string* getToursDescriptionsByMaxPrice(double maxPrice, int& size) {
+        // Определяем начальный размер массива
+        const int initialSize = 10;
+        string* descriptions = new string[initialSize];
+        size = 0;
+
+        TourNode* current = head;
+        while (current != nullptr) {
+            if (current->data->price <= maxPrice) {
+                // Проверяем, не выходим ли за пределы массива, и если да, увеличиваем его размер
+                if (size >= initialSize) {
+                    string* temp = new string[size * 2];
+                    for (int i = 0; i < size; ++i) {
+                        temp[i] = descriptions[i];
+                    }
+                    delete[] descriptions;
+                    descriptions = temp;
+                }
+                descriptions[size++] = current->data->destination;
+            }
+            current = current->next;
+        }
+
+        return descriptions;
     }
 };
 
@@ -240,11 +248,13 @@ int main() {
         double maxPrice;
         cout << "Введите максимальную цену для фильтрации туров: ";
         cin >> maxPrice;
-        vector<string> filteredTours = tourList.getToursDescriptionsByMaxPrice(maxPrice);
+        int size;
+        string* filteredTours = tourList.getToursDescriptionsByMaxPrice(maxPrice, size);
         cout << "Туры с ценой до " << maxPrice << " рублей:" << endl;
-        for (const auto& description : filteredTours) {
-            cout << description << endl;
+        for (int i = 0; i < size; ++i) {
+            cout << filteredTours[i] << endl;
         }
+        delete[] filteredTours;
 
     }
     catch (const exception& e) {
