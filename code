@@ -1,7 +1,8 @@
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
-#include <algorithm>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -124,11 +125,62 @@ public:
         }
         return descriptions;
     }
+
+    // Запись данных в файл
+    void writeToFile(const string& filename) {
+        ofstream outFile(filename);
+        if (!outFile.is_open()) {
+            throw runtime_error("Ошибка открытия файла для записи");
+        }
+
+        TourNode* current = head;
+        while (current != nullptr) {
+            outFile << current->data->destination << " " << current->data->duration << " "
+                << current->data->price << " " << current->data->groupSize << endl;
+            current = current->next;
+        }
+
+        outFile.close();
+    }
+
+    // Чтение данных из файла
+    void readFromFile(const string& filename) {
+        clear();
+
+        ifstream inFile(filename);
+        if (!inFile.is_open()) {
+            throw runtime_error("Ошибка открытия файла для чтения");
+        }
+
+        string destination;
+        int duration;
+        double price;
+        int groupSize;
+        while (inFile >> destination >> duration >> price >> groupSize) {
+            Tour tour = { destination, duration, price, groupSize };
+            addTour(tour);
+        }
+
+        inFile.close();
+    }
+
+    // Очистка списка туров
+    void clear() {
+        while (head != nullptr) {
+            TourNode* temp = head;
+            head = head->next;
+            delete temp;
+        }
+    }
 };
 
 int main() {
     setlocale(LC_ALL, "Russian");
     try {
+        string filename;
+        cout << "Введите имя файла для сохранения данных: ";
+        cin >> filename;
+
         TourList tourList;
 
         char choice;
@@ -149,6 +201,9 @@ int main() {
             cout << "Хотите добавить ещё тур? (y/n): ";
             cin >> choice;
         } while (choice == 'y' || choice == 'Y');
+
+        // Запись данных в файл
+        tourList.writeToFile(filename);
 
         // Вывод добавленных туров
         cout << "Добавленные туры:" << endl;
@@ -175,30 +230,11 @@ int main() {
             cerr << "Ошибка удаления тура: " << e.what() << endl;
         }
 
-        // Получение значения тура по номеру позиции
-        int getPosition;
-        cout << "Введите номер позиции тура для получения данных: ";
-        cin >> getPosition;
-        try {
-            Tour tour = tourList.getTour(getPosition);
-            cout << "Данные тура на позиции " << getPosition << ":" << endl;
-            cout << "Направление: " << tour.destination << ", Продолжительность: " << tour.duration
-                << " дней, Цена: " << tour.price << ", Размер группы: " << tour.groupSize << endl;
-        }
-        catch (const out_of_range& e) {
-            cerr << "Ошибка получения данных о туре: " << e.what() << endl;
-        }
+        // Запись измененных данных в файл
+        tourList.writeToFile(filename);
 
-        // Проверка наличия тура с указанным направлением поездки
-        string destinationCheck;
-        cout << "Введите направление для проверки наличия тура: ";
-        cin >> destinationCheck;
-        if (tourList.findTourByDestination(destinationCheck)) {
-            cout << "Тур с указанным направлением найден." << endl;
-        }
-        else {
-            cout << "Тур с указанным направлением не найден." << endl;
-        }
+        // Чтение данных из файла
+        tourList.readFromFile(filename);
 
         // Получение массива описаний туров, цена которых не превышает указанную
         double maxPrice;
