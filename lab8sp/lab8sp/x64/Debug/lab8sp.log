@@ -1,7 +1,0 @@
-﻿  Source.cpp
-C:\СП\lab8sp\lab8sp\Source.cpp(52,37): warning C4267: аргумент: преобразование из "size_t" в "_Ty"; возможна потеря данных
-C:\СП\lab8sp\lab8sp\Source.cpp(52,37): warning C4267:         with
-C:\СП\lab8sp\lab8sp\Source.cpp(52,37): warning C4267:         [
-C:\СП\lab8sp\lab8sp\Source.cpp(52,37): warning C4267:             _Ty=int
-C:\СП\lab8sp\lab8sp\Source.cpp(52,37): warning C4267:         ]
-  lab8sp.vcxproj -> C:\СП\lab8sp\x64\Debug\lab8sp.exe
